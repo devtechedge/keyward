@@ -84,10 +84,42 @@ export function ConnectionsPanel() {
         return;
       }
       setToken("");
+      const storedLabel = label.trim() || kind;
       setLabel("");
       setTeamId("");
       setStatus({ kind: "ok", message: `Stored ${body.masked ?? "the credential"}` });
       await load();
+
+      // Now scan the account that was just connected, so the dashboard has
+      // something real in it rather than waiting for a CLI run.
+      if (kind === "github" || kind === "vercel") {
+        setStatus({ kind: "busy", message: "Scanning the account" });
+        const scan = await fetch("/api/scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            kind,
+            label: storedLabel,
+            teamId: teamId.trim() || undefined,
+          }),
+        });
+        const scanBody = (await scan.json()) as {
+          ok: boolean;
+          findings?: number;
+          error?: string;
+        };
+        if (scanBody.ok) {
+          setStatus({
+            kind: "ok",
+            message: `Stored and scanned. ${scanBody.findings ?? 0} key(s) found.`,
+          });
+        } else {
+          setStatus({
+            kind: "error",
+            message: scanBody.error ?? "Stored, but the scan failed",
+          });
+        }
+      }
     } catch (error) {
       setStatus({
         kind: "error",
