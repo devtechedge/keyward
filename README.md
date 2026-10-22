@@ -25,9 +25,9 @@ across every consumer that holds it, without an outage, with proof it landed.
 
 ## Screenshots
 
-| Control plane | Rotation run |
-| --- | --- |
-| ![Control plane](docs/screenshots/02-control-plane.png) | ![Rotation run](docs/screenshots/04-rotation-run.png) |
+| Control plane | Rotation run | Pricing |
+| --- | --- | --- |
+| ![Control plane](docs/screenshots/02-control-plane.png) | ![Rotation run](docs/screenshots/04-rotation-run.png) | ![Pricing](docs/screenshots/05-pricing.png) |
 
 | Landing | Light mode |
 | --- | --- |
@@ -81,6 +81,16 @@ the trouble of rotating at all.
   safe to commit and safe to review.
 - **Reads OpenAI and Anthropic directly.** Through their Admin APIs, with expiry and scopes where
   the provider supports them.
+- **Scans where the keys actually are.** The working tree, git history, a whole GitHub account, or
+  every environment variable in a Vercel team.
+- **Pings you when spend breaks pattern.** Slack or a webhook, with the numbers attached.
+
+---
+
+## Pricing
+
+The CLI is free and MIT licensed. The hosted control plane is **$99 a month**, one plan, no usage
+based billing. Full detail on the [pricing page](https://keyward-seven.vercel.app/pricing).
 
 ---
 
@@ -89,7 +99,7 @@ the trouble of rotating at all.
 | Layer | Technology |
 | --- | --- |
 | CLI | Node 24, TypeScript, zero runtime dependencies beyond `zod` |
-| Core | Provider adapters, detection patterns, rotation engine, anomaly detection |
+| Core | Provider adapters, detection patterns, rotation engine, anomaly detection, alerting |
 | Frontend | Next.js 16, React 19, server rendered, no chart library, inline SVG |
 | Data | Neon Postgres, with a demo dataset when no database is configured |
 | Hosting | Vercel (Hobby), team `devtechedge1` |
@@ -105,14 +115,18 @@ npm install -g @keyward/cli
 # Find every AI provider key in the working tree and in git history
 keyward scan . --history
 
+# Or scan a whole GitHub account, or a whole Vercel team
+keyward scan --github devtechedge
+keyward scan --vercel devtechedge1
+
 # Connect a provider. The admin key goes in a 0600 file, never in the config.
 keyward connect --provider openai --token sk-admin-...
 
 # List every key the organisation holds, with age, idle time and policy verdicts
 keyward inventory
 
-# Read spend and flag anomalies against a median baseline
-keyward spend --days 30
+# Read spend, flag anomalies, and ping Slack when something breaks pattern
+keyward spend --days 30 --alert
 
 # Rotate across every consumer, with verification and rollback
 keyward rotate plan.json --dry-run
