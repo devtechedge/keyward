@@ -85,3 +85,13 @@ create table if not exists keyward_policies (
   spend_spike_floor   numeric(12, 2) not null default 10,
   enabled             boolean not null default true
 );
+
+create table if not exists keyward_subscriptions (
+  account_ref             text primary key,
+  stripe_customer_id      text,
+  stripe_subscription_id  text,
+  plan                    text not null default 'monthly',
+  status                  text not null default 'none',
+  current_period_end      timestamptz,
+  updated_at              timestamptz not null default now()
+);
