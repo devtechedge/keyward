@@ -1,8 +1,11 @@
 import {
   DEFAULT_POLICIES,
+  deliverAlert,
   detectAnomalies,
   findStaleKeys,
   getAdapter,
+  targetsFromEnv,
+  type Anomaly,
   type Policy,
   type ProviderId,
   type SpendSummary,
@@ -71,7 +74,11 @@ export async function runInventory(options: InventoryOptions): Promise<number> {
   const policy: Policy =
     DEFAULT_POLICIES.find((p) => p.id === options.policy) ?? DEFAULT_POLICIES[0]!;
 
-  const all = [];
+  const all: Array<{
+    connection: (typeof config.connections)[number];
+    keys: Awaited<ReturnType<ReturnType<typeof getAdapter>["listKeys"]>>;
+  }> = [];
+
   for (const connection of connections) {
     const adapter = getAdapter(connection.provider);
     const token = await readCredential(connection.tokenFile);
@@ -128,6 +135,10 @@ export interface SpendOptions {
   readonly provider?: ProviderId;
   readonly days?: number;
   readonly json?: boolean;
+  /** Send an alert for each anomaly found. */
+  readonly alert?: boolean;
+  /** Where the operator can look, included in the alert. */
+  readonly dashboardUrl?: string;
 }
 
 export async function runSpend(options: SpendOptions): Promise<number> {
@@ -143,7 +154,12 @@ export async function runSpend(options: SpendOptions): Promise<number> {
   const days = options.days ?? 30;
   const to = new Date();
   const from = new Date(to.getTime() - days * 86_400_000);
-  const results: Array<{ summary: SpendSummary; anomalies: ReturnType<typeof detectAnomalies> }> = [];
+  const results: Array<{
+    provider: ProviderId;
+    totalUsd: number;
+    points: SpendSummary["points"];
+    anomalies: Anomaly[];
+  }> = [];
 
   for (const connection of connections) {
     const adapter = getAdapter(connection.provider);
@@ -152,17 +168,23 @@ export async function runSpend(options: SpendOptions): Promise<number> {
       { provider: connection.provider, adminToken: { value: token } },
       { from, to, bucket: "1d" },
     );
-    results.push({ summary, anomalies: detectAnomalies(summary) });
+    const detected = detectAnomalies(summary);
+    results.push({
+      provider: connection.provider,
+      totalUsd: summary.totalUsd,
+      points: [...summary.points],
+      anomalies: [...detected.anomalies],
+    });
   }
 
   if (options.json) {
     line(
       JSON.stringify(
         results.map((r) => ({
-          provider: r.summary.provider,
-          totalUsd: r.summary.totalUsd,
-          points: r.summary.points,
-          anomalies: r.anomalies.anomalies,
+          provider: r.provider,
+          totalUsd: r.totalUsd,
+          points: r.points,
+          anomalies: r.anomalies,
         })),
         null,
         2,
@@ -171,14 +193,41 @@ export async function runSpend(options: SpendOptions): Promise<number> {
     return 0;
   }
 
+  let anomalyCount = 0;
   for (const result of results) {
-    heading(`${result.summary.provider}: ${result.summary.totalUsd.toFixed(2)} USD over ${days} days`);
-    for (const anomaly of result.anomalies.anomalies) {
+    heading(`${result.provider}: ${result.totalUsd.toFixed(2)} USD over ${days} days`);
+    for (const anomaly of result.anomalies) {
+      anomalyCount += 1;
       line(paint(`  ${anomaly.severity.toUpperCase()} ${anomaly.summary}`, style.yellow));
+      if (anomaly.detail) line(paint(`    ${anomaly.detail}`, style.grey));
     }
-    if (result.anomalies.anomalies.length === 0) {
+    if (result.anomalies.length === 0) {
       line(paint("  No spend anomalies.", style.green));
     }
   }
+
+  if (options.alert && anomalyCount > 0) {
+    const targets = targetsFromEnv();
+    for (const result of results) {
+      for (const anomaly of result.anomalies) {
+        const delivery = await deliverAlert(
+          {
+            anomaly,
+            provider: result.provider,
+            scope: anomaly.scope,
+            ...(options.dashboardUrl ? { dashboardUrl: options.dashboardUrl } : {}),
+          },
+          targets,
+        );
+        if (delivery.delivered.length > 0) {
+          line(paint(`  Alert delivered via ${delivery.delivered.join(", ")}`, style.green));
+        }
+        for (const failure of delivery.failures) {
+          line(paint(`  Alert to ${failure.channel} failed: ${failure.error}`, style.red));
+        }
+      }
+    }
+  }
+
   return 0;
 }
