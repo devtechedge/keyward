@@ -22,12 +22,14 @@ export const metadata: Metadata = {
       "Find, rotate and police every AI API key your company holds. Rotation with verification and rollback.",
     type: "website",
     siteName: "keyward",
+    images: [{ url: "/og.png", width: 1280, height: 640, alt: "keyward" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "keyward",
     description:
       "Find, rotate and police every AI API key your company holds. Rotation with verification and rollback.",
+    images: ["/og.png"],
   },
   robots: { index: true, follow: true },
   icons: {
