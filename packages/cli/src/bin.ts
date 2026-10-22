@@ -28,6 +28,8 @@ Options
   --secret <name>          Secret to rotate, when the plan holds several
   --days <n>               Days of spend to read
   --policy <id>            Policy to evaluate inventory against
+  --github <owner>         Scan a GitHub account instead of a directory
+  --vercel <team>          Scan a Vercel team instead of a directory
   --history                Include git history when scanning
   --dry-run                Show what a rotation would do, change nothing
   --json                   Machine readable output
@@ -35,6 +37,8 @@ Options
 
 Examples
   keyward scan . --history
+  keyward scan --github devtechedge
+  keyward scan --vercel devtechedge1
   keyward connect --provider openai --token sk-admin-...
   keyward inventory
   keyward spend --days 30
@@ -52,6 +56,8 @@ async function main(): Promise<number> {
       days: { type: "string" },
       policy: { type: "string" },
       history: { type: "boolean" },
+      github: { type: "string" },
+      vercel: { type: "string" },
       "dry-run": { type: "boolean" },
       json: { type: "boolean" },
       help: { type: "boolean", short: "h" },
@@ -70,6 +76,8 @@ async function main(): Promise<number> {
         root: positionals[1] ?? ".",
         ...(values.history ? { history: true } : {}),
         ...(values.json ? { json: true } : {}),
+        ...(values.github ? { github: values.github } : {}),
+        ...(values.vercel ? { vercel: values.vercel } : {}),
       });
 
     case "connect":
