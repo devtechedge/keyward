@@ -96,6 +96,8 @@ export interface Anomaly {
   readonly ratio: number;
   readonly scope: string;
   readonly summary: string;
+  /** Longer explanation of what happened and what to do. */
+  readonly detail?: string;
   readonly baselineDays: number;
 }
 

@@ -7,6 +7,7 @@ export * from "./anomaly.js";
 export * from "./policy.js";
 export * from "./github.js";
 export * from "./vercel.js";
+export * from "./alert.js";
 export { createOpenAIAdapter } from "./providers/openai.js";
 export { createAnthropicAdapter } from "./providers/anthropic.js";
 export { getAdapter, listAdapters } from "./providers/registry.js";

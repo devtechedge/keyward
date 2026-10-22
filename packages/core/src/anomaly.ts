@@ -62,6 +62,7 @@ export function detectAnomalies(
         ratio,
         scope: scopeOf(latest),
         summary: `${latest.spendUsd.toFixed(2)} USD on ${latest.at.slice(0, 10)} against a ${baselineUsd.toFixed(2)} USD baseline, ${ratio.toFixed(1)} times normal`,
+        detail: `The most recent day of ${summary.provider} spend broke the ${prior.length} day baseline. A key leak, a runaway agent loop and a traffic change all look like this.`,
         baselineDays: prior.length,
       });
     }
@@ -80,6 +81,7 @@ export function detectAnomalies(
       ratio: baselineUsd > 0 ? latest.spendUsd / baselineUsd : 0,
       scope: scopeOf(latest),
       summary: `Spend fell to ${latest.spendUsd.toFixed(2)} USD from a ${baselineUsd.toFixed(2)} USD baseline, which usually means a key stopped being used`,
+      detail: `A collapse in spend is worth checking as well. A key that was revoked, a job that stopped running and traffic that moved somewhere else all look the same from here.`,
       baselineDays: prior.length,
     });
   }
