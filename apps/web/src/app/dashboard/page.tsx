@@ -1,8 +1,17 @@
+import { cookies } from "next/headers";
 import { SpendChart } from "../../components/SpendChart";
 import { getOverview } from "../../lib/overview";
 import type { WebKey, WebRun } from "../../lib/types";
 
-export const revalidate = 30;
+export const dynamic = "force-dynamic";
+
+/**
+ * The control plane always renders the current state.
+ *
+ * It is not cached, because a dashboard that says "live data" and then shows a
+ * stale build is worse than no dashboard. The read is one query per table
+ * against a pooler, which is fast enough for a page a human loads.
+ */
 
 function money(value: number): string {
   return value.toLocaleString("en-US", {
@@ -42,7 +51,9 @@ const STATE_LABEL: Record<WebKey["state"], string> = {
 };
 
 export default async function DashboardPage() {
-  const data = await getOverview();
+  const store = await cookies();
+  const accountRef = store.get("kw_account")?.value ?? null;
+  const data = await getOverview(accountRef);
 
   const values = data.spend.map((p) => p.usd);
   const peak = values.length > 0 ? Math.max(...values) : 0;
@@ -143,23 +154,33 @@ export default async function DashboardPage() {
               <SplitStat label="Peak day" value={money(peak)} />
               <SplitStat label="Baseline" value={money(baseline)} />
             </div>
-            <div className="breakdown">
-              <div className="breakdown-head">Where the money goes</div>
-              {breakdown.map((row) => (
-                <div className="breakdown-row" key={row.label}>
-                  <span className="breakdown-label">{row.label}</span>
-                  <span className="breakdown-track" aria-hidden="true">
-                    <span
-                      className="breakdown-fill"
-                      style={{
-                        width: `${(row.usd / (breakdown[0]?.usd || 1)) * 100}%`,
-                      }}
-                    />
-                  </span>
-                  <span className="breakdown-value mono">{money(row.usd)}</span>
-                </div>
-              ))}
-            </div>
+            {breakdown.length > 0 ? (
+              <div className="breakdown">
+                <div className="breakdown-head">Where the money goes</div>
+                {breakdown.map((row) => (
+                  <div className="breakdown-row" key={row.label}>
+                    <span className="breakdown-label">{row.label}</span>
+                    <span className="breakdown-track" aria-hidden="true">
+                      <span
+                        className="breakdown-fill"
+                        style={{
+                          width: `${(row.usd / (breakdown[0]?.usd || 1)) * 100}%`,
+                        }}
+                      />
+                    </span>
+                    <span className="breakdown-value mono">{money(row.usd)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="muted" style={{ fontSize: 13.8, marginTop: 20, marginBottom: 0 }}>
+                No spend has been read yet. Connect a provider on the settings page, or run
+                <code className="mono" style={{ margin: "0 4px" }}>
+                  keyward spend --days 30
+                </code>
+                and the numbers appear here.
+              </p>
+            )}
           </div>
         </section>
 
@@ -214,41 +235,51 @@ export default async function DashboardPage() {
             values are never shown, only fingerprints and ages
           </span>
         </div>
-        <div className="table-scroll">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Key</th>
-                <th>Provider</th>
-                <th>Scope</th>
-                <th>Created</th>
-                <th>Last used</th>
-                <th>Monthly</th>
-                <th>State</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.keys.map((key) => (
-                <tr key={key.id}>
-                  <td>
-                    <div style={{ fontWeight: 560 }}>{key.name}</div>
-                    <div className="faint mono">{key.masked}</div>
-                  </td>
-                  <td className="muted">{key.provider}</td>
-                  <td className="muted">{key.scope}</td>
-                  <td className="muted">{daysSince(key.createdAt)}d ago</td>
-                  <td className="muted">
-                    {key.lastUsedAt ? relative(key.lastUsedAt) : "never used"}
-                  </td>
-                  <td className="muted">{key.monthlyUsd > 0 ? money(key.monthlyUsd) : "-"}</td>
-                  <td>
-                    <span className={`pill ${STATE_PILL[key.state]}`}>{STATE_LABEL[key.state]}</span>
-                  </td>
+        {data.keys.length === 0 ? (
+          <div className="card-body">
+            <p className="muted" style={{ fontSize: 13.8, margin: 0 }}>
+              The provider inventory is empty for this account. Connect OpenAI or Anthropic on the
+              settings page and keyward will list every key the organisation holds, with its age and
+              idle time.
+            </p>
+          </div>
+        ) : (
+          <div className="table-scroll">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Key</th>
+                  <th>Provider</th>
+                  <th>Scope</th>
+                  <th>Created</th>
+                  <th>Last used</th>
+                  <th>Monthly</th>
+                  <th>State</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {data.keys.map((key) => (
+                  <tr key={key.id}>
+                    <td>
+                      <div style={{ fontWeight: 560 }}>{key.name}</div>
+                      <div className="faint mono">{key.masked}</div>
+                    </td>
+                    <td className="muted">{key.provider}</td>
+                    <td className="muted">{key.scope}</td>
+                    <td className="muted">{daysSince(key.createdAt)}d ago</td>
+                    <td className="muted">
+                      {key.lastUsedAt ? relative(key.lastUsedAt) : "never used"}
+                    </td>
+                    <td className="muted">{key.monthlyUsd > 0 ? money(key.monthlyUsd) : "-"}</td>
+                    <td>
+                      <span className={`pill ${STATE_PILL[key.state]}`}>{STATE_LABEL[key.state]}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       <div className="grid-2" style={{ marginTop: 16 }}>
@@ -260,9 +291,14 @@ export default async function DashboardPage() {
             </span>
           </div>
           <div className="card-body">
-            {data.runs.map((run) => (
-              <RunBlock key={run.id} run={run} />
-            ))}
+            {data.runs.length === 0 ? (
+              <p className="muted" style={{ fontSize: 13.8, margin: 0 }}>
+                No rotation has run yet. Every run creates the replacement, writes it to each consumer,
+                proves the change landed, and only then revokes the old key.
+              </p>
+            ) : (
+              data.runs.map((run) => <RunBlock key={run.id} run={run} />)
+            )}
           </div>
         </section>
 
@@ -292,11 +328,14 @@ export default async function DashboardPage() {
                       }}
                     />
                     <div style={{ minWidth: 0 }}>
-                      <div className="anomaly-title mono">{finding.masked}</div>
-                      <div className="anomaly-detail">
-                        {finding.pattern} in {finding.location}
-                        {finding.live === true ? " - confirmed still live" : ""}
-                      </div>
+                    <div className="anomaly-title mono">{finding.masked}</div>
+                    <div className="anomaly-detail">
+                      {finding.pattern}
+                      {finding.location && finding.location !== "unknown"
+                        ? ` in ${finding.location}`
+                        : ""}
+                      {finding.live === true ? " - confirmed still live" : ""}
+                    </div>
                     </div>
                   </div>
                 ))}

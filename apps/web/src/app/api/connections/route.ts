@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { fingerprint, mask } from "@keyward/core";
 import { hasDatabase, query } from "../../../lib/db";
 import { encryptSecret, secretFingerprint } from "../../../lib/crypto";
@@ -9,7 +10,8 @@ export const dynamic = "force-dynamic";
  * Connect a provider or a GitHub account to the hosted control plane.
  *
  * The credential is encrypted before it is written. The response carries a
- * fingerprint and a mask, never the value.
+ * fingerprint and a mask, never the value. An account cookie is set so the
+ * dashboard shows this account's data and nobody else's.
  */
 export async function POST(request: Request) {
   if (!hasDatabase()) {
@@ -41,7 +43,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const accountRef = (body.accountRef ?? "default").trim();
+  const accountRef = (body.accountRef ?? "").trim() || `acct_${secretFingerprint(token).slice(0, 8)}`;
   const label = (body.label ?? kind).trim();
 
   try {
@@ -67,13 +69,22 @@ export async function POST(request: Request) {
       ],
     );
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       ok: true,
       kind,
       label,
+      accountRef,
       fingerprint: fingerprint(token),
       masked: mask(token),
     });
+    response.cookies.set("kw_account", accountRef, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: true,
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30,
+    });
+    return response;
   } catch (error) {
     return NextResponse.json(
       {
@@ -90,6 +101,11 @@ export async function GET() {
   if (!hasDatabase()) {
     return NextResponse.json({ ok: true, connections: [] });
   }
+  const store = await cookies();
+  const accountRef = store.get("kw_account")?.value ?? null;
+  if (!accountRef) {
+    return NextResponse.json({ ok: true, connections: [] });
+  }
   try {
     const rows = await query<{
       kind: string;
@@ -99,7 +115,8 @@ export async function GET() {
       scope: string | null;
       updated_at: string;
     }>(
-      "select kind, label, token_fingerprint, token_masked, scope, updated_at from keyward_connections order by updated_at desc",
+      "select kind, label, token_fingerprint, token_masked, scope, updated_at from keyward_connections where account_ref = $1 order by updated_at desc",
+      [accountRef],
     );
     return NextResponse.json({ ok: true, connections: rows });
   } catch (error) {

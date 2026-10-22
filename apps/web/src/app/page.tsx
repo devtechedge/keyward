@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getOverview } from "../lib/overview";
 import { SpendChart } from "../components/SpendChart";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 const FEATURES = [
   {
@@ -23,7 +23,7 @@ const FEATURES = [
 ];
 
 export default async function HomePage() {
-  const data = await getOverview();
+  const data = await getOverview(null);
   const top = data.spend.slice(-21);
 
   return (

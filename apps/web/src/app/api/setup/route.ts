@@ -4,10 +4,11 @@ import { hasDatabase, query } from "../../../lib/db";
 export const dynamic = "force-dynamic";
 
 /**
- * Create the control plane tables.
+ * Create the control plane tables, and bring an older deployment up to date.
  *
- * The hosted app runs this once on first boot so a fresh database works without
- * a manual migration step. It is safe to run repeatedly.
+ * The setup route is safe to run repeatedly. It creates what is missing and
+ * adds a column that a previous deployment did not have, so a database that
+ * was created before account scoping keeps working.
  */
 export async function POST() {
   if (!hasDatabase()) {
@@ -20,6 +21,7 @@ export async function POST() {
   const statements = [
     `create table if not exists keyward_keys (
       id text primary key,
+      account_ref text not null default 'default',
       provider text not null,
       name text not null,
       masked text not null,
@@ -35,12 +37,14 @@ export async function POST() {
     )`,
     `create table if not exists keyward_spend_daily (
       bucket date not null,
+      account_ref text not null default 'default',
       provider text not null,
       spend_usd numeric(12, 2) not null default 0,
-      primary key (bucket, provider)
+      primary key (bucket, account_ref, provider)
     )`,
     `create table if not exists keyward_anomalies (
       id text primary key,
+      account_ref text not null default 'default',
       provider text not null,
       severity text not null,
       title text not null,
@@ -53,6 +57,7 @@ export async function POST() {
     )`,
     `create table if not exists keyward_runs (
       id text primary key,
+      account_ref text not null default 'default',
       secret text not null,
       provider text not null,
       status text not null,
@@ -62,6 +67,7 @@ export async function POST() {
     )`,
     `create table if not exists keyward_findings (
       id text primary key,
+      account_ref text not null default 'default',
       provider text not null,
       pattern text not null,
       masked text not null,
@@ -103,11 +109,53 @@ export async function POST() {
     )`,
   ];
 
+  // Columns added after the first release. Adding one to an existing table
+  // needs a default, and it is not null, so the default carries the rows
+  // that were written before account scoping existed.
+  const migrations: Array<{ table: string; column: string; type: string }> = [
+    { table: "keyward_keys", column: "account_ref", type: "text not null default 'default'" },
+    { table: "keyward_spend_daily", column: "account_ref", type: "text not null default 'default'" },
+    { table: "keyward_anomalies", column: "account_ref", type: "text not null default 'default'" },
+    { table: "keyward_runs", column: "account_ref", type: "text not null default 'default'" },
+    { table: "keyward_findings", column: "account_ref", type: "text not null default 'default'" },
+    { table: "keyward_findings", column: "fingerprint", type: "text not null default ''" },
+    { table: "keyward_keys", column: "fingerprint", type: "text not null default ''" },
+  ];
+
+  const applied: string[] = [];
+  const skipped: string[] = [];
+
   try {
     for (const statement of statements) {
       await query(statement);
     }
-    return NextResponse.json({ ok: true, tables: statements.length });
+
+    for (const migration of migrations) {
+      const exists = await query<{ present: boolean }>(
+        `select exists (
+           select 1 from information_schema.columns
+           where table_schema = 'public'
+             and table_name = $1
+             and column_name = $2
+         ) as present`,
+        [migration.table, migration.column],
+      );
+      if (exists[0]?.present) {
+        skipped.push(`${migration.table}.${migration.column}`);
+        continue;
+      }
+      await query(
+        `alter table ${migration.table} add column if not exists ${migration.column} ${migration.type}`,
+      );
+      applied.push(`${migration.table}.${migration.column}`);
+    }
+
+    return NextResponse.json({
+      ok: true,
+      tables: statements.length,
+      columnsAdded: applied,
+      columnsAlreadyPresent: skipped.length,
+    });
   } catch (error) {
     return NextResponse.json(
       { ok: false, error: error instanceof Error ? error.message : String(error) },

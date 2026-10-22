@@ -46,7 +46,7 @@ test("a Vercel scan finds a provider key by its variable name when the value is 
 
   const critical = result.findings.filter((f) => f.severity === "critical");
   assert.equal(critical.length, 1);
-  assert.match(critical[0]?.source.path ?? "", /smart-waitlist-engine:SUPABASE_SERVICE_ROLE_KEY/);
+  assert.match(critical[0]?.source.path ?? "", /smart-waitlist-engine \/ SUPABASE_SERVICE_ROLE_KEY/);
 
   assert.ok(
     !JSON.stringify(result).includes("postgresql://u:p@host/db"),

@@ -12,19 +12,20 @@ import type {
 /**
  * Read the control plane state.
  *
- * When a database is configured the numbers come from it. When it is not, the app
- * serves the demo dataset so the public view is always a working product. The mode
- * is always reported so the interface never implies live data that is not there.
+ * A visitor with no account gets the demo dataset, so the public view is a
+ * working product rather than an empty shell. A visitor with an account
+ * reference gets their own data, and only theirs.
  */
-export async function getOverview(): Promise<WebOverview> {
-  if (!hasDatabase()) {
+export async function getOverview(accountRef?: string | null): Promise<WebOverview> {
+  if (!accountRef || !hasDatabase()) {
     return demoOverview();
   }
 
   try {
     const [spendRows, keyRows, anomalyRows, runRows, findingRows, metaRows] = await Promise.all([
       query<{ at: string; usd: string }>(
-        "select bucket as at, sum(spend_usd)::text as usd from keyward_spend_daily group by bucket order by bucket",
+        "select bucket as at, sum(spend_usd)::text as usd from keyward_spend_daily where account_ref = $1 group by bucket order by bucket",
+        [accountRef],
       ),
       query<{
         id: string;
@@ -40,7 +41,8 @@ export async function getOverview(): Promise<WebOverview> {
         state: string;
         finding_id: string | null;
       }>(
-        "select id, provider, name, masked, created_at, last_used_at, expires_at, scope, service_account, monthly_usd, state, finding_id from keyward_keys order by created_at desc",
+        "select id, provider, name, masked, created_at, last_used_at, expires_at, scope, service_account, monthly_usd, state, finding_id from keyward_keys where account_ref = $1 order by created_at desc",
+        [accountRef],
       ),
       query<{
         id: string;
@@ -54,7 +56,8 @@ export async function getOverview(): Promise<WebOverview> {
         detected_at: string;
         scope: string;
       }>(
-        "select id, provider, severity, title, detail, observed_usd, baseline_usd, ratio, detected_at, scope from keyward_anomalies order by detected_at desc limit 50",
+        "select id, provider, severity, title, detail, observed_usd, baseline_usd, ratio, detected_at, scope from keyward_anomalies where account_ref = $1 order by detected_at desc limit 50",
+        [accountRef],
       ),
       query<{
         id: string;
@@ -65,7 +68,8 @@ export async function getOverview(): Promise<WebOverview> {
         duration_ms: number;
         steps: unknown;
       }>(
-        "select id, secret, provider, status, started_at, duration_ms, steps from keyward_runs order by started_at desc limit 20",
+        "select id, secret, provider, status, started_at, duration_ms, steps from keyward_runs where account_ref = $1 order by started_at desc limit 20",
+        [accountRef],
       ),
       query<{
         id: string;
@@ -77,10 +81,12 @@ export async function getOverview(): Promise<WebOverview> {
         live: boolean | null;
         detected_at: string;
       }>(
-        "select id, provider, pattern, masked, severity, location, live, detected_at from keyward_findings order by detected_at desc limit 100",
+        "select id, provider, pattern, masked, severity, location, live, detected_at from keyward_findings where account_ref = $1 order by detected_at desc limit 100",
+        [accountRef],
       ),
       query<{ total_usd: string; key_count: string; at_risk: string; last_scan: string | null }>(
-        "select (select coalesce(sum(spend_usd),0) from keyward_spend_daily where bucket >= date_trunc('month', now()))::text as total_usd, (select count(*) from keyward_keys)::text as key_count, (select count(*) from keyward_keys where state <> 'active')::text as at_risk, (select max(detected_at) from keyward_findings)::text as last_scan",
+        "select (select coalesce(sum(spend_usd),0) from keyward_spend_daily where account_ref = $1 and bucket >= date_trunc('month', now()))::text as total_usd, (select count(*) from keyward_keys where account_ref = $1)::text as key_count, (select count(*) from keyward_keys where account_ref = $1 and state <> 'active')::text as at_risk, (select max(detected_at) from keyward_findings where account_ref = $1)::text as last_scan",
+        [accountRef],
       ),
     ]);
 
@@ -135,9 +141,7 @@ export async function getOverview(): Promise<WebOverview> {
     }));
 
     const meta = metaRows[0];
-    const previous = spend
-      .slice(-31, -1)
-      .reduce((sum, p) => sum + p.usd, 0);
+    const previous = spend.slice(-31, -1).reduce((sum, p) => sum + p.usd, 0);
     const total = Number(meta?.total_usd ?? 0);
 
     return {

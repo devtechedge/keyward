@@ -121,7 +121,7 @@ function nameFinding(
       masked: mask(envKey),
       provider: provider as Finding["secret"]["provider"],
     },
-    source: { kind: "file", path: `vercel:${project}:${envKey}`, line: 0 },
+    source: { kind: "file", path: `${project} / ${envKey}`, line: 0 },
     severity,
     live: null,
     reason: `${envKey} is stored in the Vercel project ${project}`,
@@ -194,7 +194,7 @@ export async function scanVercelEnv(
         seen.add(finding.id);
         findings.push({
           ...finding,
-          source: { kind: "file", path: `vercel:${name}:${envKey}`, line: 0 },
+          source: { kind: "file", path: `${name} / ${envKey}`, line: 0 },
           reason: `${finding.reason} in the Vercel environment variable ${envKey} of project ${name}`,
         });
       }

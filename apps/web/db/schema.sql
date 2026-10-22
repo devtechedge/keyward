@@ -4,10 +4,15 @@
 -- hosted view reflects what a real scan and rotation produced.
 --
 -- No column here ever stores a secret value. Keys are stored masked, with a
--- fingerprint that is not reversible.
+-- fingerprint that is not reversible. A connected credential is stored
+-- encrypted, as ciphertext, never in the clear.
+--
+-- Every row is scoped to an account. A visitor without an account cookie sees
+-- the demo dataset instead.
 
 create table if not exists keyward_keys (
   id              text primary key,
+  account_ref     text not null default 'default',
   provider        text not null,
   name            text not null,
   masked          text not null,
@@ -22,18 +27,19 @@ create table if not exists keyward_keys (
   finding_id      text
 );
 
-create index if not exists keyward_keys_provider_idx on keyward_keys (provider);
-create index if not exists keyward_keys_created_idx on keyward_keys (created_at desc);
+create index if not exists keyward_keys_account_idx on keyward_keys (account_ref, created_at desc);
 
 create table if not exists keyward_spend_daily (
-  bucket   date not null,
-  provider text not null,
-  spend_usd numeric(12, 2) not null default 0,
-  primary key (bucket, provider)
+  bucket      date not null,
+  account_ref text not null default 'default',
+  provider    text not null,
+  spend_usd   numeric(12, 2) not null default 0,
+  primary key (bucket, account_ref, provider)
 );
 
 create table if not exists keyward_anomalies (
   id           text primary key,
+  account_ref  text not null default 'default',
   provider     text not null,
   severity     text not null,
   title        text not null,
@@ -45,11 +51,12 @@ create table if not exists keyward_anomalies (
   detected_at  timestamptz not null default now()
 );
 
-create index if not exists keyward_anomalies_detected_idx
-  on keyward_anomalies (detected_at desc);
+create index if not exists keyward_anomalies_account_idx
+  on keyward_anomalies (account_ref, detected_at desc);
 
 create table if not exists keyward_runs (
   id          text primary key,
+  account_ref text not null default 'default',
   secret      text not null,
   provider    text not null,
   status      text not null,
@@ -58,10 +65,11 @@ create table if not exists keyward_runs (
   steps       jsonb not null default '[]'::jsonb
 );
 
-create index if not exists keyward_runs_started_idx on keyward_runs (started_at desc);
+create index if not exists keyward_runs_account_idx on keyward_runs (account_ref, started_at desc);
 
 create table if not exists keyward_findings (
   id          text primary key,
+  account_ref text not null default 'default',
   provider    text not null,
   pattern     text not null,
   masked      text not null,
@@ -72,8 +80,8 @@ create table if not exists keyward_findings (
   detected_at timestamptz not null default now()
 );
 
-create index if not exists keyward_findings_detected_idx
-  on keyward_findings (detected_at desc);
+create index if not exists keyward_findings_account_idx
+  on keyward_findings (account_ref, detected_at desc);
 
 create table if not exists keyward_policies (
   id                  text primary key,
@@ -87,25 +95,25 @@ create table if not exists keyward_policies (
 );
 
 create table if not exists keyward_subscriptions (
-  account_ref             text primary key,
-  stripe_customer_id      text,
-  stripe_subscription_id  text,
-  plan                    text not null default 'monthly',
-  status                  text not null default 'none',
-  current_period_end      timestamptz,
-  updated_at              timestamptz not null default now()
+  account_ref            text primary key,
+  stripe_customer_id     text,
+  stripe_subscription_id text,
+  plan                   text not null default 'monthly',
+  status                 text not null default 'none',
+  current_period_end     timestamptz,
+  updated_at             timestamptz not null default now()
 );
 
 -- Connected accounts. The credential is encrypted at rest, so this table holds
 -- ciphertext and a fingerprint, never a value.
 create table if not exists keyward_connections (
   account_ref        text not null,
-  kind              text not null,
-  label             text not null,
-  token_encrypted   text not null,
-  token_fingerprint text not null,
-  token_masked      text not null,
-  scope             text,
-  updated_at        timestamptz not null default now(),
+  kind               text not null,
+  label              text not null,
+  token_encrypted    text not null,
+  token_fingerprint  text not null,
+  token_masked       text not null,
+  scope              text,
+  updated_at         timestamptz not null default now(),
   primary key (account_ref, kind)
 );
