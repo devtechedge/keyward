@@ -1,0 +1,53 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    name: core and cli
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: typecheck
+        run: |
+          npm run typecheck --workspace @keyward/core
+          npm run typecheck --workspace @keyward/cli
+      - name: test
+        run: npm run test --workspace @keyward/core
+      - name: build
+        run: |
+          npm run build --workspace @keyward/core
+          npm run build --workspace @keyward/cli
+      - name: smoke test the cli
+        run: |
+          mkdir -p /tmp/kw && printf 'OPENAI_API_KEY=sk-proj-abcdefghijklmnopqrstuvwxyz012345\n' > /tmp/kw/.env
+          node packages/cli/dist/bin.js scan /tmp/kw --json | tee /tmp/kw/out.json
+          node -e "const d=require('/tmp/kw/out.json');if(d.findings.length!==1)process.exit(1);if(JSON.stringify(d).includes('abcdefghijklmnopqrstuvwxyz012345'))process.exit(1);console.log('scan ok, value not echoed')"
+
+  web:
+    name: web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: build
+        run: npm run build:web
+      - name: typecheck
+        run: npm run typecheck --workspace @keyward/web
