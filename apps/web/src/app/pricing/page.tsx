@@ -19,7 +19,7 @@ const PLANS = [
       "Slack and webhook alerts",
       "MIT licensed, self hosted, no telemetry",
     ],
-    cta: "npm install -g @keyward/cli",
+    cta: "npx --yes github:devtechedge/keyward",
   },
   {
     name: "Team",

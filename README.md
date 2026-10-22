@@ -113,7 +113,8 @@ based billing. Full detail on the [pricing page](https://keyward-seven.vercel.ap
 ## Quick Start
 
 ```bash
-npm install -g @keyward/cli
+# Run it straight from the source, no install step
+npx --yes github:devtechedge/keyward scan . --history
 
 # Find every AI provider key in the working tree and in git history
 keyward scan . --history
@@ -206,6 +207,26 @@ npm install
 npm run build
 npm test
 npm run dev:web
+```
+
+## Installing the CLI
+
+The npm package is not published yet, so run it straight from the source:
+
+```bash
+npx --yes github:devtechedge/keyward scan . --history
+```
+
+That compiles the TypeScript on the way in and needs Node 22 or newer. To keep the command around,
+clone the repository and install it from the clone:
+
+```bash
+git clone https://github.com/devtechedge/keyward
+cd keyward
+npm install
+npm run build
+npm install -g .
+keyward scan . --history
 ```
 
 ## Agent workflows

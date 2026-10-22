@@ -59,11 +59,11 @@ export default async function HomePage() {
 
             <div className="install" id="install">
               <span className="prompt">$</span>
-              <code>npx keyward scan . --history</code>
+              <code>npx --yes github:devtechedge/keyward scan . --history</code>
               <button
                 className="copy-btn"
                 type="button"
-                data-copy="npx keyward scan . --history"
+                data-copy="npx --yes github:devtechedge/keyward scan . --history"
               >
                 copy
               </button>

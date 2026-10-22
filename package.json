@@ -12,6 +12,18 @@
     "packages/*",
     "apps/*"
   ],
+  "bin": {
+    "keyward": "packages/cli/dist/bin.js"
+  },
+  "files": [
+    "packages/core",
+    "packages/cli",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "@keyward/core": "file:packages/core"
+  },
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "build:core": "npm run build --workspace @keyward/core",
@@ -21,7 +33,8 @@
     "dev:cli": "npm run dev --workspace @keyward/cli",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present"
+    "lint": "npm run lint --workspaces --if-present",
+    "prepare": "tsc -p packages/core/tsconfig.build.json && tsc -p packages/cli/tsconfig.build.json"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

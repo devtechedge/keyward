@@ -28,6 +28,10 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test --workspace @keyward/core
+      - name: publish core
+        run: npm publish --workspace @keyward/core --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: publish cli
         run: npm publish --workspace @keyward/cli --access public
         env:
