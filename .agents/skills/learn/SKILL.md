@@ -47,3 +47,6 @@ description: <one line, when to load it>
 
 Skills that document how this project is worked on live in `.agents/skills` inside the repository,
 so a visitor can read them. They follow the same shape and the same rules as the machine store.
+
+When a machine procedure changes, update the matching project copy in `.agents/skills` in the same
+turn. The public copy must not drift from the procedure the agent actually follows.

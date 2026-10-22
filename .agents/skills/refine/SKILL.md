@@ -55,3 +55,5 @@ This repository is a security tool. Two extra rules apply:
 - Never paste a live key into a chat, a log, a commit, a memory file or a test fixture. Test
   fixtures use obviously fake values that the detector still recognises, and a test that asserts
   the value is never echoed.
+- Keyward is canonical. A retired repository stays retired unless Dev says otherwise. Do not move
+  work back to keylens or KeyOps.

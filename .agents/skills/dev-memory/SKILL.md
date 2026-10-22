@@ -5,6 +5,9 @@ description: Session memory protocol for the keyward project. Read at the start 
 
 # dev-memory (keyward project)
 
+This is the canonical repository. `devtechedge/keylens` and `devtechedge/keyops` are retired parallel
+builds; do not treat either as active.
+
 Standing memory for this repository lives in `~/.agents/memory/`, not in the repo. The repo holds
 the code; the memory store holds the state.
 
@@ -39,3 +42,5 @@ topic pivot):
 - A rule lives in one file only. Do not keep the same rule in the global file and a domain file.
 - Never write a secret value into any memory file. Key names, masked forms, lengths and
   fingerprints only.
+- Keyward is the only active repository. A retired repo gets no new features, releases, or memory
+  beyond its retirement note.

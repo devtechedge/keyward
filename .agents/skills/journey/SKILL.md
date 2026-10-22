@@ -17,6 +17,15 @@ The report lists every tracked skill with its state, use count, patch count and 
 archived directories, a short count of the OpenCode fast snapshot, the dev-memory standing file
 sizes against their character caps, and the last thirty ledger events oldest first.
 
+Also list the project copies:
+
+```bash
+git ls-files '.agents/skills/*/SKILL.md'
+```
+
+Report any project copy that is missing or empty. These are the public documentation copies, not
+machine skills.
+
 ## Rules
 
 - Paste the report. It is the point of the command.

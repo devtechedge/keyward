@@ -20,6 +20,8 @@ opens a pull request somewhere else.
   signature, because git for Windows cannot reach the ssh-agent pipe.
 - Never write a secret value into a commit, a log, an issue, or a release note. This repository
   exists to make that mistake impossible, so it must not commit one itself.
+- Keyward is canonical. `keylens` and `keyops` are retired; do not restore them or open new work
+  there unless Dev explicitly asks.
 
 ## Public text rules
 

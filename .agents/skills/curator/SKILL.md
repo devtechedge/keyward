@@ -33,3 +33,5 @@ The script snapshots learn created skills, keeps the newest five backups, marks 
 
 The project carries its own skills under `.agents/skills`. Those are documentation of how the
 project is worked on, not a substitute for the machine store. The curator pass does not touch them.
+The six hand-written copies (`dev-memory`, `curator`, `journey`, `learn`, `oss`, `refine`) are
+updated by hand when a procedure changes, never archived by a machine-store pass.

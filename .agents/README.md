@@ -4,6 +4,10 @@ These are the workflows used to work on this repository. They are the project sc
 same procedures the machine runs, kept in the repository so anyone reading the source can see how
 the work is done.
 
+`keyward` is the canonical repository. `devtechedge/keylens` and `devtechedge/keyops` are retired
+parallel builds, and both carry a `docs/RETIRED.md` pointing here. Do not revive either one without
+Dev's say.
+
 | Workflow | What it is for |
 | --- | --- |
 | [`dev-memory`](skills/dev-memory/SKILL.md) | Session memory protocol. Read at session start, write at session end. |
