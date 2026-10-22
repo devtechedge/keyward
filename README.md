@@ -212,6 +212,19 @@ npm run dev:web
 
 The workflows used to work on this repository live in [`.agents`](.agents/README.md).
 
+## Security
+
+Report a vulnerability to devtechedge@gmail.com. See [SECURITY.md](SECURITY.md) for how this
+project handles secrets and what is in scope.
+
+## Other repositories for this product
+
+`devtechedge/keylens` and `devtechedge/keyops` were parallel builds of the same brief. Their
+unique parts were folded in here and both carry a retirement note pointing at this repository.
+**This is the canonical one.**
+
+---
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
