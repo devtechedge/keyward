@@ -16,7 +16,7 @@
     "build": "npm run build --workspaces --if-present",
     "build:core": "npm run build --workspace @keyward/core",
     "build:cli": "npm run build --workspace @keyward/cli",
-    "build:web": "npm run build --workspace @keyward/web",
+    "build:web": "npm run build --workspace @keyward/core && npm run build --workspace @keyward/web",
     "dev:web": "npm run dev --workspace @keyward/web",
     "dev:cli": "npm run dev --workspace @keyward/cli",
     "test": "npm run test --workspaces --if-present",
