@@ -1,9 +1,16 @@
 name: release
 
+# Manual on purpose. Publishing to npm needs an npm account and an NPM_TOKEN
+# secret, which this repository does not have yet. Run it from the Actions tab
+# when both exist, and tag the release from the same commit.
+
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish, for example v0.1.0"
+        required: true
+        type: string
 
 permissions:
   contents: read

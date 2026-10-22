@@ -18,7 +18,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "npm run build && tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test --experimental-strip-types \"test/**/*.test.ts\""
   },
   "dependencies": {
