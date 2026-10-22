@@ -1061,6 +1061,142 @@ h3 {
   height: 0;
 }
 
+/* ---------- pricing ---------- */
+
+.plans {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 44px;
+  max-width: 900px;
+}
+
+@media (max-width: 760px) {
+  .plans {
+    grid-template-columns: 1fr;
+  }
+}
+
+.plan {
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.plan-highlight {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent),
+    var(--shadow);
+}
+
+.plan-head h3 {
+  font-size: 1.05rem;
+}
+
+.plan-tagline {
+  color: var(--text-muted);
+  font-size: 13.8px;
+  margin: 6px 0 0;
+  line-height: 1.5;
+}
+
+.plan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.plan-amount {
+  font-size: 2.3rem;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-unit {
+  color: var(--text-faint);
+  font-size: 13.5px;
+}
+
+.plan-features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  flex: 1;
+}
+
+.plan-features li {
+  position: relative;
+  padding-left: 22px;
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.plan-features li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  opacity: 0.75;
+}
+
+.faq {
+  max-width: 780px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.faq-item {
+  border-bottom: 1px solid var(--line-soft);
+  padding: 16px 0;
+}
+
+.faq-item summary {
+  cursor: pointer;
+  font-weight: 570;
+  font-size: 15px;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-item summary::after {
+  content: "+";
+  color: var(--text-faint);
+  font-size: 19px;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.faq-item[open] summary::after {
+  content: "−";
+}
+
+.faq-item p {
+  color: var(--text-muted);
+  margin: 12px 0 0;
+  font-size: 14.5px;
+  line-height: 1.62;
+  max-width: 68ch;
+}
+
 /* ---------- misc ---------- */
 
 .mode-badge {
