@@ -1,0 +1,34 @@
+{
+  "name": "@keyward/cli",
+  "version": "0.1.0",
+  "description": "keyward: find, rotate and police every AI API key your company holds.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "keyward": "./dist/bin.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test --experimental-strip-types \"test/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@keyward/core": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3"
+  }
+}
