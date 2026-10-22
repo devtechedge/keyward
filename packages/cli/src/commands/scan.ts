@@ -60,17 +60,30 @@ function reportFindings(findings: readonly Finding[], context: string): void {
   );
 }
 
-function toJson(findings: readonly Finding[]): string {
+/**
+ * The machine readable output.
+ *
+ * Always an object with a `findings` array, so a script can read the same
+ * shape whatever source was scanned.
+ */
+function toJson(
+  findings: readonly Finding[],
+  context: Record<string, unknown> = {},
+): string {
   return JSON.stringify(
-    findings.map((f) => ({
-      id: f.id,
-      provider: f.secret.provider,
-      masked: f.secret.masked,
-      severity: f.severity,
-      source: f.source,
-      reason: f.reason,
-      remediation: f.remediation,
-    })),
+    {
+      findings: findings.map((f) => ({
+        id: f.id,
+        provider: f.secret.provider,
+        masked: f.secret.masked,
+        fingerprint: f.secret.fingerprint,
+        severity: f.severity,
+        source: f.source,
+        reason: f.reason,
+        remediation: f.remediation,
+      })),
+      ...context,
+    },
     null,
     2,
   );
@@ -85,7 +98,7 @@ export async function runScan(options: ScanCommandOptions): Promise<number> {
     }
     const result = await scanGitHubOwner({ token, owner: options.github });
     if (options.json) {
-      line(toJson(result.findings));
+      line(toJson(result.findings, { source: "github", owner: options.github, filesScanned: result.filesScanned, repositoriesScanned: result.scannedRepos }));
       return result.findings.length > 0 ? 1 : 0;
     }
     heading(
@@ -103,7 +116,7 @@ export async function runScan(options: ScanCommandOptions): Promise<number> {
     }
     const result = await scanVercelEnv({ token, teamId: options.vercel });
     if (options.json) {
-      line(toJson(result.findings));
+      line(toJson(result.findings, { source: "vercel", teamId: options.vercel, variablesScanned: result.scannedVars, projectsScanned: result.scannedProjects }));
       return result.findings.length > 0 ? 1 : 0;
     }
     heading(
@@ -119,7 +132,7 @@ export async function runScan(options: ScanCommandOptions): Promise<number> {
   });
 
   if (options.json) {
-    line(toJson(result.findings));
+    line(toJson(result.findings, { source: "local", root: options.root, filesScanned: result.filesScanned, durationMs: result.durationMs }));
     return result.findings.length > 0 ? 1 : 0;
   }
 
