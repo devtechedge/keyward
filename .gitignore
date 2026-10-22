@@ -2,6 +2,7 @@
 node_modules/
 
 # Build output
+.next/
 dist/
 *.tsbuildinfo
 
@@ -14,6 +15,8 @@ dist/
 
 # Vercel
 .vercel/
+
+next-env.d.ts
 
 # Editors and OS
 .DS_Store
