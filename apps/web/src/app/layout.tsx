@@ -59,9 +59,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </Link>
             <nav className="nav">
               <Link href="/dashboard">Dashboard</Link>
+              <Link href="/settings">Settings</Link>
               <Link href="/pricing">Pricing</Link>
               <Link href="/#how">How it works</Link>
-              <Link href="/#install">Install</Link>
               <a
                 href="https://github.com/devtechedge/keyward"
                 rel="noreferrer noopener"

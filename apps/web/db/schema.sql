@@ -95,3 +95,17 @@ create table if not exists keyward_subscriptions (
   current_period_end      timestamptz,
   updated_at              timestamptz not null default now()
 );
+
+-- Connected accounts. The credential is encrypted at rest, so this table holds
+-- ciphertext and a fingerprint, never a value.
+create table if not exists keyward_connections (
+  account_ref        text not null,
+  kind              text not null,
+  label             text not null,
+  token_encrypted   text not null,
+  token_fingerprint text not null,
+  token_masked      text not null,
+  scope             text,
+  updated_at        timestamptz not null default now(),
+  primary key (account_ref, kind)
+);
