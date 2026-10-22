@@ -20,7 +20,7 @@ function summary(points: number[]): SpendSummary {
 
 test("a cycle alerts once and then stays quiet", async () => {
   const posted: string[] = [];
-  const fakeFetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+  const fakeFetch = (async (_input: string | URL, init?: RequestInit) => {
     posted.push(String(init?.body ?? ""));
     return new Response("ok", { status: 200 });
   }) as unknown as typeof fetch;
@@ -50,7 +50,7 @@ test("a cycle alerts once and then stays quiet", async () => {
 
 test("a cycle that finds nothing sends nothing", async () => {
   const posted: string[] = [];
-  const fakeFetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+  const fakeFetch = (async (_input: string | URL, init?: RequestInit) => {
     posted.push(String(init?.body ?? ""));
     return new Response("ok", { status: 200 });
   }) as unknown as typeof fetch;

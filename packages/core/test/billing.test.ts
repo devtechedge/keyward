@@ -61,7 +61,7 @@ test("a malformed header is rejected without throwing", () => {
 
 test("a checkout session is created in subscription mode with the account reference", async () => {
   const calls: Array<{ url: string; body: string }> = [];
-  const fakeFetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+  const fakeFetch = (async (input: string | URL, init?: RequestInit) => {
     calls.push({ url: String(input), body: String(init?.body ?? "") });
     if (String(input).includes("/v1/customers")) {
       return new Response(JSON.stringify({ id: "cus_123" }), { status: 200 });

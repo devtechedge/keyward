@@ -10,7 +10,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 test("a Vercel scan finds a provider key by its variable name when the value is encrypted", async () => {
-  const fakeFetch = (async (input: RequestInfo | URL) => {
+  const fakeFetch = (async (input: string | URL) => {
     const url = String(input);
     if (url.includes("/v9/projects?")) {
       return jsonResponse([
@@ -46,7 +46,10 @@ test("a Vercel scan finds a provider key by its variable name when the value is 
 
   const critical = result.findings.filter((f) => f.severity === "critical");
   assert.equal(critical.length, 1);
-  assert.match(critical[0]?.source.path ?? "", /smart-waitlist-engine \/ SUPABASE_SERVICE_ROLE_KEY/);
+  assert.ok(
+    critical[0]?.source.kind === "file" &&
+      /smart-waitlist-engine \/ SUPABASE_SERVICE_ROLE_KEY/.test(critical[0].source.path),
+  );
 
   assert.ok(
     !JSON.stringify(result).includes("postgresql://u:p@host/db"),
@@ -55,7 +58,7 @@ test("a Vercel scan finds a provider key by its variable name when the value is 
 });
 
 test("a Vercel scan reports a plaintext key when Vercel hands the value over", async () => {
-  const fakeFetch = (async (input: RequestInfo | URL) => {
+  const fakeFetch = (async (input: string | URL) => {
     const url = String(input);
     if (url.includes("/v9/projects?")) {
       return jsonResponse([{ id: "prj_1", name: "api" }]);

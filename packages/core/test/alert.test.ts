@@ -18,7 +18,7 @@ const anomaly: Anomaly = {
 
 test("a Slack alert is posted with the numbers and a link", async () => {
   const calls: Array<{ url: string; body: string }> = [];
-  const fakeFetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+  const fakeFetch = (async (input: string | URL, init?: RequestInit) => {
     calls.push({ url: String(input), body: String(init?.body ?? "") });
     return new Response("ok", { status: 200 });
   }) as unknown as typeof fetch;

@@ -25,7 +25,7 @@ test("findInText skips placeholders", () => {
 
 test("a GitHub scan walks the tree and reports where a key was", async () => {
   const calls: string[] = [];
-  const fakeFetch = (async (input: RequestInfo | URL) => {
+  const fakeFetch = (async (input: string | URL) => {
     const url = String(input);
     calls.push(url);
     if (url.includes("/users/acme/repos")) {
@@ -57,8 +57,12 @@ test("a GitHub scan walks the tree and reports where a key was", async () => {
   assert.equal(result.scannedRepos, 1, "forks must be skipped");
   assert.equal(result.findings.length, 1);
   assert.equal(result.findings[0]?.secret.provider, "openai");
-  assert.equal(result.findings[0]?.severity, "critical");
-  assert.match(result.findings[0]?.source.path ?? "", /acme\/api\/src\/config\.ts/);
+  const critical = result.findings[0];
+  assert.equal(critical?.severity, "critical");
+  assert.ok(
+    critical?.source.kind === "file" && /acme\/api\/src\/config\.ts/.test(critical.source.path),
+    "the finding must name the file it came from",
+  );
   assert.ok(
     !JSON.stringify(result).includes("abcdefghijklmnopqrstuvwx"),
     "the raw value must never appear in a scan result",
