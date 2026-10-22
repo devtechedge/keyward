@@ -122,7 +122,6 @@ export type TargetKind =
   | "netlify-env"
   | "cloudflare-secret"
   | "manual";
-
 export type RotationStepStatus =
   | "pending"
   | "created"

@@ -12,6 +12,8 @@ export * from "./billing.js";
 export * from "./cycle.js";
 export * from "./escrow.js";
 export * from "./capabilities.js";
+export * from "./consumers/index.js";
+export * from "./consumer-target.js";
 export { createOpenAIAdapter } from "./providers/openai.js";
 export { createAnthropicAdapter } from "./providers/anthropic.js";
 export { getAdapter, listAdapters } from "./providers/registry.js";
