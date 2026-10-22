@@ -49,6 +49,21 @@ export interface RotationOptions {
   readonly now?: () => Date;
   /** Called after the new secret is created, before any write happens. */
   readonly onCreated?: (value: SecretValue) => Promise<void> | void;
+  /**
+   * The value being replaced, when the caller knows it.
+   *
+   * It is handed to `onEscrow` so a rollback can finish after a crash.
+   */
+  readonly previousValue?: SecretValue | null;
+  /**
+   * Called with the value being replaced, before anything is written.
+   *
+   * Put it in escrow so a rollback can still finish after a crash. A rollback
+   * that only works inside one process is not a rollback.
+   */
+  readonly onEscrow?: (value: SecretValue) => Promise<void> | void;
+  /** Called when the run finished and the old value is no longer needed. */
+  readonly onSettled?: () => Promise<void> | void;
 }
 
 export interface RotationOutcome {
@@ -77,6 +92,7 @@ export async function rotate(options: RotationOptions): Promise<RotationOutcome>
   let created: { keyId: string; masked: string } | null = null;
   let failure: { targetId: string; error: string } | null = null;
 
+  const options_ = options;
   const record = (
     target: { readonly kind: RotationTarget["kind"]; readonly locator: string },
     status: RotationStep["status"],
@@ -137,6 +153,33 @@ export async function rotate(options: RotationOptions): Promise<RotationOutcome>
       },
       created: null,
     };
+  }
+
+  // Step 1b: escrow the value being replaced, before anything is written.
+  // If the process dies halfway through, a later run can still finish the
+  // rollback, because the old value was not only ever in memory.
+  const escrowStarted = now();
+  try {
+    const previous = options.previousValue;
+    if (previous) {
+      await options.onEscrow?.(previous);
+      record(
+        { kind: "manual", locator: options.adapter.displayName },
+        "verified",
+        "Escrowed the value being replaced",
+        escrowStarted,
+      );
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    record(
+      { kind: "manual", locator: options.adapter.displayName },
+      "failed",
+      "Could not escrow the value being replaced",
+      escrowStarted,
+      message,
+    );
+    failure = { targetId: "escrow", error: message };
   }
 
   // Step 2 and 3: write and verify, one consumer at a time.
@@ -223,6 +266,7 @@ export async function rotate(options: RotationOptions): Promise<RotationOutcome>
     };
   }
 
+  await options.onSettled?.();
   return {
     run: {
       id: `run_${Date.now().toString(36)}`,

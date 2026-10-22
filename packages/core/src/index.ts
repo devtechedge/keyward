@@ -10,6 +10,8 @@ export * from "./vercel.js";
 export * from "./alert.js";
 export * from "./billing.js";
 export * from "./cycle.js";
+export * from "./escrow.js";
+export * from "./capabilities.js";
 export { createOpenAIAdapter } from "./providers/openai.js";
 export { createAnthropicAdapter } from "./providers/anthropic.js";
 export { getAdapter, listAdapters } from "./providers/registry.js";
