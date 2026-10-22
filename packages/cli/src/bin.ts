@@ -5,6 +5,7 @@ import { heading, line, paint, style } from "./ui.js";
 import { loadConfig } from "./config.js";
 import { runScan } from "./commands/scan.js";
 import { runConnect, runInventory, runSpend } from "./commands/providers.js";
+import { runDue } from "./commands/due.js";
 import { runRotate } from "./commands/rotate.js";
 
 const USAGE = `keyward - find, rotate and police every AI API key your company holds
@@ -16,6 +17,7 @@ Commands
   scan [path]              Scan a directory for AI provider keys
   connect                  Store an organisation admin key for a provider
   inventory                List the keys your providers hold, with age and staleness
+  due                      Show which secrets are due for rotation
   spend                    Read spend and flag anomalies against a baseline
   rotate <plan.json>       Rotate a secret across every consumer, with verification
   doctor                   Check which providers are connected and reachable
@@ -106,6 +108,14 @@ async function main(): Promise<number> {
         ...(values.days ? { days: Number(values.days) } : {}),
         ...(values.json ? { json: true } : {}),
         ...(values.alert ? { alert: true } : {}),
+      });
+
+    case "due":
+      return runDue({
+        ...(values.provider ? { provider: values.provider as "openai" | "anthropic" } : {}),
+        ...(values.policy ? { policy: values.policy } : {}),
+        ...(values.json ? { json: true } : {}),
+        ...(values["dry-run"] ? { dryRun: true } : {}),
       });
 
     case "rotate": {
