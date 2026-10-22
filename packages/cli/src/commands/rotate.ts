@@ -1,4 +1,5 @@
 import { getAdapter, rotate } from "@keyward/core";
+import { clearEscrow, escrowValue } from "@keyward/core";
 import { heading, line, paint, style } from "../ui.js";
 import { loadConfig, readCredential } from "../config.js";
 import { buildTargets, loadPlan, toRotationPlan } from "../plan.js";
@@ -53,6 +54,24 @@ export async function runRotate(options: RotateOptions): Promise<number> {
   const adapter = getAdapter(secret.provider);
   const token = await readCredential(connection.tokenFile);
   const rotationPlan = toRotationPlan(secret, baseDir);
+  const runId = `run_${Date.now().toString(36)}`;
+
+  // The value being replaced, read back from the first consumer that can be
+  // read. It is what a rollback restores.
+  let previousValue: string | null = null;
+  for (const target of targets) {
+    if (!target.read) continue;
+    try {
+      const current = await target.read();
+      if (current) {
+        previousValue = current.value;
+        break;
+      }
+    } catch {
+      // A consumer that cannot be read is not a blocker, it just means the
+      // escrow has no value to hold.
+    }
+  }
 
   const outcome = await rotate({
     plan: rotationPlan,
@@ -60,6 +79,24 @@ export async function runRotate(options: RotateOptions): Promise<number> {
     adapter,
     targets,
     overlapSeconds: secret.overlapSeconds,
+    // The value being replaced is escrowed before anything is written, so a
+    // rollback can still be finished if this process dies halfway through.
+    previousValue: previousValue ? { value: previousValue } : null,
+    onEscrow: async (value) => {
+      await escrowValue({
+        runId,
+        secretName: secret.name,
+        provider: secret.provider,
+        oldValue: value.value,
+        createdAt: new Date().toISOString(),
+      });
+    },
+    onSettled: async () => {
+      await clearEscrow(runId).catch(() => {
+        // The escrow staying behind is not a failure of the rotation, it is
+        // only a leftover to clean up later.
+      });
+    },
   });
 
   if (options.json) {
