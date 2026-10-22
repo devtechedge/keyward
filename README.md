@@ -69,10 +69,13 @@ the trouble of rotating at all.
 
 ## Features
 
-- **Finds keys you forgot.** The working tree, git history and the provider's own inventory, in one
-  list, with age, idle time and scope.
+- **Finds keys you forgot.** The working tree, git history, a whole GitHub account, or every
+  environment variable in a Vercel team, plus the provider's own inventory, in one list with age,
+  idle time and scope.
 - **Rotates without a window of downtime.** Create, write to every consumer, prove each one now
   holds the new value, then revoke. A failure rolls back.
+- **Knows what is due.** `keyward due` lists the secrets that are past their rotation window or
+  have gone unused long enough to be safe to revoke, with the reason for each.
 - **Catches spend that looks wrong.** A median baseline rather than a mean, so one previous spike
   does not hide the next one. Spikes and collapses are both flagged.
 - **Never shows a value.** Findings carry a non-reversible fingerprint and a mask. Nothing is
@@ -81,9 +84,9 @@ the trouble of rotating at all.
   safe to commit and safe to review.
 - **Reads OpenAI and Anthropic directly.** Through their Admin APIs, with expiry and scopes where
   the provider supports them.
-- **Scans where the keys actually are.** The working tree, git history, a whole GitHub account, or
-  every environment variable in a Vercel team.
 - **Pings you when spend breaks pattern.** Slack or a webhook, with the numbers attached.
+- **Runs hosted.** Connect an account in the browser and the control plane shows your own keys.
+  Credentials are encrypted at rest and every row is scoped to one account.
 
 ---
 
@@ -99,9 +102,9 @@ based billing. Full detail on the [pricing page](https://keyward-seven.vercel.ap
 | Layer | Technology |
 | --- | --- |
 | CLI | Node 24, TypeScript, zero runtime dependencies beyond `zod` |
-| Core | Provider adapters, detection patterns, rotation engine, anomaly detection, alerting |
+| Core | Provider adapters, detection patterns, rotation engine, anomaly detection, alerting, billing |
 | Frontend | Next.js 16, React 19, server rendered, no chart library, inline SVG |
-| Data | Neon Postgres, with a demo dataset when no database is configured |
+| Data | Neon Postgres, account scoped, with a demo dataset when no account is connected |
 | Hosting | Vercel (Hobby), team `devtechedge1` |
 | CI | GitHub Actions, Node 24, typecheck, tests, build, CLI smoke test |
 
@@ -124,6 +127,9 @@ keyward connect --provider openai --token sk-admin-...
 
 # List every key the organisation holds, with age, idle time and policy verdicts
 keyward inventory
+
+# Show which secrets are due for rotation, and why
+keyward due
 
 # Read spend, flag anomalies, and ping Slack when something breaks pattern
 keyward spend --days 30 --alert
@@ -173,6 +179,23 @@ value arrives on stdin so it never lands in a process listing or a shell history
 
 Detection covers OpenAI (admin, project, service account), Anthropic (admin and standard),
 OpenRouter, Google AI, Groq, Hugging Face, xAI, Supabase and DeepSeek.
+
+---
+
+## The hosted control plane
+
+The CLI is the tool. The hosted app is the place to see the result and to let more than one person
+look at it.
+
+- **Connect an account** on the settings page. The credential is encrypted with a key that stays in
+  the server environment, and is decrypted only for the request that needs it.
+- **Every row is scoped to an account.** A visitor without an account sees the demo dataset, and
+  never another account's rows.
+- **The mode is always stated.** The dashboard says `Live data` or `Demo data`, so a demo is never
+  passed off as live.
+
+Setup for a self hosted deployment: create the tables with `POST /api/setup` (it is idempotent and
+migrates an older database), and set `KEYWARD_ENCRYPTION_KEY` to 32 bytes, hex or base64.
 
 ---
 
