@@ -2,7 +2,7 @@
   "name": "@keyward/cli",
   "version": "0.1.0",
   "description": "keyward: find, rotate and police every AI API key your company holds.",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "type": "module",
   "bin": {
     "keyward": "./dist/bin.js"

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Find, rotate and police every AI API key your company holds.",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=22"

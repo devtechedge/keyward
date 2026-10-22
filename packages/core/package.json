@@ -2,7 +2,7 @@
   "name": "@keyward/core",
   "version": "0.1.0",
   "description": "Provider adapters, fan-out rotation engine and anomaly detection for keyward.",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

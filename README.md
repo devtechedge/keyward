@@ -1,18 +1,37 @@
-<div align="center">
-
 # keyward
 
-**Find, rotate and police every AI API key your company holds.**
+Find, rotate and police every AI API key your company holds. An API key is a credit card for
+compute now, and keyward is the part of AI key management nobody has solved: rotating a secret
+across every consumer that holds it, without an outage, with proof it landed.
 
-An API key is a credit card for compute now. keyward finds every AI provider key in
-your stack, rotates them across every consumer with verification and rollback, and tells
-you the moment spend breaks pattern.
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?logo=vercel)](https://keyward-seven.vercel.app)
+[![CI](https://github.com/devtechedge/keyward/actions/workflows/ci.yml/badge.svg)](https://github.com/devtechedge/keyward/actions/workflows/ci.yml)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-[Live control plane](https://keyward-seven.vercel.app) ·
-[Source](https://github.com/devtechedge/keyward) ·
-[Dashboard](https://keyward-seven.vercel.app/dashboard)
+---
 
-</div>
+## Live Demo
+
+**https://keyward-seven.vercel.app**
+
+> **Status:** the control plane is live and hosted. It currently renders a demo dataset, because the
+> project is new and no organisation has connected a provider yet. The moment the CLI pushes a real
+> scan or a real rotation, the same view shows that data. The interface always says which mode it is
+> in, so a demo is never passed off as live.
+
+---
+
+## Screenshots
+
+| Control plane | Rotation run |
+| --- | --- |
+| ![Control plane](docs/screenshots/02-control-plane.png) | ![Rotation run](docs/screenshots/04-rotation-run.png) |
+
+| Landing | Light mode |
+| --- | --- |
+| ![Landing](docs/screenshots/01-landing.png) | ![Light mode](docs/screenshots/03-light-mode.png) |
 
 ---
 
@@ -23,8 +42,8 @@ Three jobs hide inside "AI key management", and most tools only do one of them.
 | Job | State of the market |
 | --- | --- |
 | **See every key you hold** | Solved and nearly free. GitHub secret scanning blocks OpenAI and Anthropic keys by default. gitleaks and trufflehog are mature. |
-| **See what the keys cost** | Saturated. Five credible tools charge under $30 a month for a spend dashboard. |
-| **Rotate a key across everything that uses it** | **Not solved.** One logical secret lives in Vercel, GitHub Actions, Supabase, a local `.env` and CI. Rotating it means creating the replacement, writing it to every consumer in the right order, proving each one now holds the new value, and only then revoking the old one. Every open source tool in this space ships "no rollback" or "manual-assist". |
+| **See what the keys cost** | Saturated. Several credible tools charge under 30 USD a month for a spend dashboard. |
+| **Rotate a key across everything that uses it** | **Not solved.** One logical secret lives in Vercel, GitHub Actions, Supabase, a local `.env` and CI. |
 
 keyward is built around the third job.
 
@@ -39,32 +58,57 @@ Most rotation advice is wrong in one specific way: **it revokes too early**.
 4. only now revoke the old secret
 ```
 
-If you deactivate the old key before your services have picked up the replacement, you
-cause an outage. If you rotate weekly without a dual key window, you cause an outage
-every week.
+Deactivating the old key before your services have picked up the replacement is how rotation causes
+an outage. Rotating weekly without a dual key window causes one every week.
 
-And rotation does not close the real hole. A key copied before the rotation is still
-valid. That is why keyward also reports key age, idle time and scope, so you can see
-which credentials are worth the trouble of rotating at all.
+Rotation also does not close the real hole. A key copied before the rotation is still valid. That is
+why keyward also reports key age, idle time and scope, so you can see which credentials are worth
+the trouble of rotating at all.
 
-## Install
+---
+
+## Features
+
+- **Finds keys you forgot.** The working tree, git history and the provider's own inventory, in one
+  list, with age, idle time and scope.
+- **Rotates without a window of downtime.** Create, write to every consumer, prove each one now
+  holds the new value, then revoke. A failure rolls back.
+- **Catches spend that looks wrong.** A median baseline rather than a mean, so one previous spike
+  does not hide the next one. Spikes and collapses are both flagged.
+- **Never shows a value.** Findings carry a non-reversible fingerprint and a mask. Nothing is
+  printed, logged or stored.
+- **Plans are values free.** A rotation plan names projects, repos, variables and paths, so it is
+  safe to commit and safe to review.
+- **Reads OpenAI and Anthropic directly.** Through their Admin APIs, with expiry and scopes where
+  the provider supports them.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+| --- | --- |
+| CLI | Node 24, TypeScript, zero runtime dependencies beyond `zod` |
+| Core | Provider adapters, detection patterns, rotation engine, anomaly detection |
+| Frontend | Next.js 16, React 19, server rendered, no chart library, inline SVG |
+| Data | Neon Postgres, with a demo dataset when no database is configured |
+| Hosting | Vercel (Hobby), team `devtechedge1` |
+| CI | GitHub Actions, Node 24, typecheck, tests, build, CLI smoke test |
+
+---
+
+## Quick Start
 
 ```bash
 npm install -g @keyward/cli
-# or, without installing
-npx keyward scan . --history
-```
 
-## Use
-
-```bash
 # Find every AI provider key in the working tree and in git history
 keyward scan . --history
 
-# Connect a provider. The admin key is stored in a 0600 file, never in the config.
+# Connect a provider. The admin key goes in a 0600 file, never in the config.
 keyward connect --provider openai --token sk-admin-...
 
-# List every key your organisation holds, with age, idle time and policy verdicts
+# List every key the organisation holds, with age, idle time and policy verdicts
 keyward inventory
 
 # Read spend and flag anomalies against a median baseline
@@ -73,18 +117,11 @@ keyward spend --days 30
 # Rotate across every consumer, with verification and rollback
 keyward rotate plan.json --dry-run
 keyward rotate plan.json
-
-# Check which providers are connected and reachable
-keyward doctor
 ```
 
-Values are never printed, never logged and never stored. Findings carry a
-non-reversible fingerprint and a mask.
+### A rotation plan
 
-## A rotation plan
-
-The plan names projects, repos, variables and paths. It never holds a secret, so it is
-safe to commit and safe to review like any other configuration.
+The plan names projects, repos, variables and paths. It never holds a secret.
 
 ```json
 {
@@ -107,10 +144,11 @@ safe to commit and safe to review like any other configuration.
 }
 ```
 
-Supported target kinds: `vercel-env`, `github-actions`, `supabase-env`, `local-env`,
-`fly-secret`, `netlify-env`, `cloudflare-secret` and `manual`. Anything with a command
-works too, and the new value arrives on stdin so it never lands in a process listing or
-a shell history.
+Target kinds: `vercel-env`, `github-actions`, `supabase-env`, `local-env`, `fly-secret`,
+`netlify-env`, `cloudflare-secret` and `manual`. Anything with a command works too, and the new
+value arrives on stdin so it never lands in a process listing or a shell history.
+
+---
 
 ## Providers
 
@@ -119,39 +157,10 @@ a shell history.
 | OpenAI | yes, Admin API | yes, service account and admin keys with expiry and scopes | yes |
 | Anthropic | yes, Admin API | yes, organisation keys | yes |
 
-Detection covers OpenAI (admin, project, service account), Anthropic (admin and
-standard), OpenRouter, Google AI, Groq, Hugging Face, xAI, Supabase and DeepSeek.
+Detection covers OpenAI (admin, project, service account), Anthropic (admin and standard),
+OpenRouter, Google AI, Groq, Hugging Face, xAI, Supabase and DeepSeek.
 
-## Anomalies
-
-The baseline is the **median** of the trailing window, not the mean, so one previous
-spike does not raise the bar and hide the next one. A spike is only reported when it
-also clears an absolute floor, because a 400 percent jump on three dollars is noise.
-A collapse in spend is reported too, because that usually means a key died, a job
-stopped, or traffic moved somewhere you cannot see.
-
-## Architecture
-
-```
-packages/core   provider adapters, detection, rotation engine, anomaly detection
-packages/cli    the keyward command
-apps/web        the hosted control plane, Next.js, server rendered
-```
-
-The hosted control plane reads from Neon. When no database is configured it serves a
-demo dataset and says so, so the public view is never a broken shell and never implies
-live data that is not there.
-
-## Security properties
-
-- A raw secret never crosses a process, network or persistence boundary in this codebase.
-  Types enforce it: `SecretValue` is the only type that may hold a value, and anything
-  that has seen a secret becomes a `MaskedSecret` with a fingerprint.
-- Findings are deduplicated by fingerprint, so one leaked key in twelve files is one
-  finding.
-- Rotation runs are append only. The old key is revoked last, and a failure restores
-  what was written and says clearly when a destination cannot be restored.
-- The plan file holds no values, so it is safe in git.
+---
 
 ## Development
 
@@ -162,6 +171,10 @@ npm test
 npm run dev:web
 ```
 
-## Licence
+## Agent workflows
 
-Apache 2.0. See [LICENSE](LICENSE).
+The workflows used to work on this repository live in [`.agents`](.agents/README.md).
+
+## License
+
+MIT. See [LICENSE](LICENSE).
